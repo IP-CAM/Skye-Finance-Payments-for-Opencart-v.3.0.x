@@ -126,7 +126,7 @@ class ControllerExtensionPaymentSkye extends Controller {
         );
 
         $this->updateOrder( $order_details, $pending );
-        $this->session->data['error'] = $this->config->get( 'payment_skye_order_status_referred_message' ) . ' Skye Finance ref#: ' . $order_info['skye_id'];
+        $this->session->data['success'] = $this->config->get( 'payment_skye_order_status_referred_message' ) . ' Skye Finance ref#: ' . $order_info['skye_id'];
 
         $this->response->redirect( $this->url->link( 'checkout/checkout', '', true ) );
     }
@@ -215,7 +215,7 @@ class ControllerExtensionPaymentSkye extends Controller {
             }else{               
                 $transaction_info = array(
                     'order_id' => $order_no,
-                    'order_status' => $ipl_transaction_result,
+                    'order_status' => 'pending',
                     'order_amount' => $order_amount,
                     'ifol_id' => $transaction_id,
                     'skye_id' => $skye_app_id,
@@ -310,7 +310,7 @@ class ControllerExtensionPaymentSkye extends Controller {
             }else{                
                 $transaction_info = array(
                     'order_id' => $order_no['0'],
-                    'order_status' => $skye_status['0'],
+                    'order_status' => 'pending',
                     'order_amount' => $order_amount['0'],
                     'ifol_id' => $transaction_id,
                     'skye_id' => $skye_app_id['0'],
@@ -419,6 +419,7 @@ class ControllerExtensionPaymentSkye extends Controller {
         $comment .= 'Result: ' . $request['order_status'] . "\n";
         $comment .= 'Amount: ' . $request['order_amount'] . "\n";
         $comment .= 'Skye Application Id: ' . $request['skye_id'] . "\n";
+        $comment .= 'Skye IFOL Id: ' . $request['ifol_id'] . "\n";
         $comment .= 'Gateway Reference: ' . $request['order_id'] . "\n";        
         $comment .= $request['message'] . "\n";
         $comment = strip_tags( $comment );
