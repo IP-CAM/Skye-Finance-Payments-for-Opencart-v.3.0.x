@@ -1,7 +1,7 @@
 <?php
 
 class ControllerExtensionPaymentSkye extends Controller {
-    const IS_DEBUG = false;   
+    const IS_DEBUG = true;   
 
     /**
      * @param object $registry
@@ -20,7 +20,10 @@ class ControllerExtensionPaymentSkye extends Controller {
      * @return string
      */
     public function index() {
-        if ( $this->cart->getTotal() >= $this->config->get( 'payment_skye_min_amt' ) ) {
+        $checkout_order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
+        $order_total = $checkout_order_info['total'];
+        $this->debugLogIncoming( 'Order total:'.$order_total );
+        if ( $order_total >= $this->config->get( 'payment_skye_min_amt' ) ) {
             $data['button_confirm'] = $this->language->get( 'button_confirm' );
 
             $data['text_loading'] = $this->language->get( 'text_loading' );
@@ -49,11 +52,13 @@ class ControllerExtensionPaymentSkye extends Controller {
      */
     public function complete() {        
         $this->debugLogIncoming( 'Complete' );
-
+        $this->debugLogIncoming( 'Order No:'.$this->request->get['order']);
+        $order_no = $this->request->get['order'];
         // Validate Response
         try {
-            $order_info = $this->getOrderAndVerifyResponse( $this->request->get );
-            $order_details = $this->model_checkout_order->getOrder( $order_info['order_id'] );
+            $order_info = $this->getOrderAndVerifyResponse( $this->request->get, 'complete' );
+            $this->debugLogIncoming('Order id:'.$order_info['order_id']);
+            $order_details = $this->model_checkout_order->getOrder( $order_no );
         } catch ( \Exception $e ) {
             // Give the customer a general error
             $this->session->data['error'] = $this->language->get( 'text_transaction_verification' );
@@ -80,6 +85,7 @@ class ControllerExtensionPaymentSkye extends Controller {
      */
     public function cancel() {
         $this->debugLogIncoming( 'Cancel' );
+        $this->debugLogIncoming( 'Order No:'.$this->request->get['order']);
 
         $this->session->data['error'] = $this->config->get( 'payment_skye_order_status_cancelled_message' );
 
@@ -102,11 +108,11 @@ class ControllerExtensionPaymentSkye extends Controller {
      */
     public function refer() {
         $this->debugLogIncoming( 'Refer' );
-        
+        $order_no = $this->request->get['order'];
          // Validate Response
          try {
-            $order_info = $this->getOrderAndVerifyResponse( $this->request->get );
-            $order_details = $this->model_checkout_order->getOrder( $order_info['order_id'] );
+            $order_info = $this->getOrderAndVerifyResponse( $this->request->get, 'refer' );
+            $order_details = $this->model_checkout_order->getOrder( $order_no );
         } catch ( \Exception $e ) {
             // Give the customer a general error
             $this->session->data['error'] = $this->language->get( 'text_transaction_verification' );
@@ -117,7 +123,7 @@ class ControllerExtensionPaymentSkye extends Controller {
         }
         
         $pending = array( 
-            'order_id' => $order_info['order_id'],
+            'order_id' => $order_no,
             'order_status' => 'pending',
             'order_amount' => $order_info['order_amount'],
             'ifol_id' => $order_info['ifol_id'],
@@ -136,9 +142,10 @@ class ControllerExtensionPaymentSkye extends Controller {
      *
      * @return mixed
      */
-    private function getOrderAndVerifyResponse( $request ) {
+    private function getOrderAndVerifyResponse( $request, $orderStatus ) {
         $this->debugLogIncoming( 'getOrderAndVerifyResponse' );
         $required = [
+            'order',
             'transaction'
         ];
 
@@ -155,7 +162,7 @@ class ControllerExtensionPaymentSkye extends Controller {
 
         $wsdl_url = $this->model_extension_payment_skye->getSoapUrl();
         
-        $transaction_result = $this->getIPLtransaction($request['transaction'], $wsdl_url);
+        $transaction_result = $this->getIPLtransaction($request['transaction'], $request['order'], $wsdl_url, $orderStatus);
         
 
         if(empty( $transaction_result )) {
@@ -173,7 +180,7 @@ class ControllerExtensionPaymentSkye extends Controller {
    * @param  string $address_parts
    * $param  WC_Order $order
    */
-  private function getIPLtransaction ($transaction_id, $wsdl_url){
+  private function getIPLtransaction ($transaction_id, $order_id, $wsdl_url, $orderStatus){
     $this->debugLogIncoming( 'getIPLtransaction' );     
     $get_ipl_transaction = array (
       'TransactionID' => $transaction_id,
@@ -212,15 +219,28 @@ class ControllerExtensionPaymentSkye extends Controller {
                         'message' => 'IPL Commit error'
                     );
                 }
-            }else{               
-                $transaction_info = array(
-                    'order_id' => $order_no,
+            }else{  
+                if (($ipl_transaction_result == 'PENDING' || $ipl_transaction_result == 'Pending') && $orderStatus == 'complete')
+                {
+                        $response = $order_id;
+                        $transaction_info = array (
+                            'order_id' => $order_id,
+                            'order_status' => 'completed',
+                            'order_amount' => $order_amount,
+                            'ifol_id' => $transaction_id,
+                            'skye_id' => $skye_app_id,
+                            'message' => 'IPL Success'
+                        );
+                }else{             
+                    $transaction_info = array(
+                    'order_id' => $order_id,
                     'order_status' => 'pending',
                     'order_amount' => $order_amount,
                     'ifol_id' => $transaction_id,
                     'skye_id' => $skye_app_id,
                     'message' => 'Pending'
-                );
+                    );
+                }
             }      
         }catch(Exception $ex){
             $this->log->write( 'Skye Error: ' . $ex->getMessage());
@@ -229,7 +249,7 @@ class ControllerExtensionPaymentSkye extends Controller {
             // Give the customer a general error
             $this->session->data['error'] = $this->language->get( 'skye_error'. $ex->getMessage() );
             $transaction_info = array(
-                'order_id' => '',
+                'order_id' => $order_id,
                 'order_status' => 'failed',
                 'order_amount' => $order_amount,
                 'ifol_id' => $transaction_id,
@@ -284,7 +304,7 @@ class ControllerExtensionPaymentSkye extends Controller {
             $order_amount = (Array)$ipl_transaction_result->Amount;
             
             $skye_app_id = (Array)$ipl_transaction_result->ApplicationId;
-            
+            $this->debugLogIncoming( 'Skye status:'.$skye_status['0'].' order status:'.$orderStatus );
             if ($skye_status['0'] == 'ACCEPTED'){
                 $commitTransaction = $this->commitIPLTransaction($transaction_id, $wsdl_url);                
                 if ($commitTransaction) {
@@ -307,15 +327,30 @@ class ControllerExtensionPaymentSkye extends Controller {
                         'message' => 'IPL Commit error'
                     );
                 }
-            }else{                
-                $transaction_info = array(
-                    'order_id' => $order_no['0'],
+            }else{      
+                $this->debugLogIncoming( 'Skye status:'.$skye_status['0'].' order status:'.$orderStatus );
+                if (($skye_status['0'] == 'PENDING' || $skye_status['0'] == 'Pending') && $orderStatus == 'complete'){
+                    $this->debugLogIncoming( 'Skye true!!!' );                
+                        $response = $order_id;
+                        $transaction_info = array (
+                            'order_id' => $order_id,
+                            'order_status' => 'completed',
+                            'order_amount' => $order_amount['0'],
+                            'ifol_id' => $transaction_id,
+                            'skye_id' => $skye_app_id['0'],
+                            'message' => 'IPL Success'
+                        );
+                }else{
+                    $this->debugLogIncoming( 'Skye false!!!' );
+                    $transaction_info = array(
+                    'order_id' => $order_id,
                     'order_status' => 'pending',
                     'order_amount' => $order_amount['0'],
                     'ifol_id' => $transaction_id,
                     'skye_id' => $skye_app_id['0'],
                     'message' => 'Pending'
-                );
+                    );
+                }
             }                     
         } else {
             $result = (string)$xmlResponse->xpath('//faultstring')[0];                                        
@@ -323,7 +358,7 @@ class ControllerExtensionPaymentSkye extends Controller {
             $this->session->data['error'] = $this->language->get( 'skye_error'.' '.$result);
             // Give the customer a general error    
             $transaction_info = array(
-                'order_id' => '',
+                'order_id' => $order_id,
                 'order_status' => 'failed',
                 'order_amount' => '',
                 'ifol_id' => $transaction_id,
@@ -410,7 +445,9 @@ class ControllerExtensionPaymentSkye extends Controller {
         $this->debugLogIncoming( 'updateOrder' );
         
         $order_status_id = $this->model_extension_payment_skye->getStatus( $request['order_status'] );        
-
+        $this->debugLogIncoming( 'order status:'.$order_status_id.' order status id:'.$order_info['order_status_id'] );
+        $this->debugLogIncoming( 'skye order:'.$request['ifol_id'] );
+        $this->debugLogIncoming( 'opencart order:'.$request['order_id']);
         if ( $order_status_id == $order_info['order_status_id'] ) {
             return;
         }

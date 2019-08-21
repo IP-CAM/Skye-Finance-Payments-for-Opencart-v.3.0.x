@@ -91,10 +91,10 @@ class ModelExtensionPaymentSkye extends Model {
                 'MobilePhoneNumber' => preg_replace('/\D+/', '', $order_info['telephone']),
                 'EmailAddress' => $order_info['email'],
                 'Status' => '',
-                'ReturnApprovedUrl' => $this->url->link( 'extension/payment/skye/complete&transaction=[TRANSACTIONID]', '', true ),
-                'ReturnDeclineUrl' => $this->url->link( 'extension/payment/skye/decline&transaction=[TRANSACTIONID]', '', true ),
-                'ReturnWithdrawUrl' => $this->url->link( 'extension/payment/skye/cancel&transaction=[TRANSACTIONID]', '', true ),
-                'ReturnReferUrl' => $this->url->link( 'extension/payment/skye/refer&transaction=[TRANSACTIONID]', '', true ),
+                'ReturnApprovedUrl' => $this->url->link( 'extension/payment/skye/complete&order='.$this->session->data['order_id'].'&transaction=[TRANSACTIONID]', '', true ),
+                'ReturnDeclineUrl' => $this->url->link( 'extension/payment/skye/decline&order='.$this->session->data['order_id'].'&transaction=[TRANSACTIONID]', '', true ),
+                'ReturnWithdrawUrl' => $this->url->link( 'extension/payment/skye/cancel&order='.$this->session->data['order_id'].'&transaction=[TRANSACTIONID]', '', true ),
+                'ReturnReferUrl' => $this->url->link( 'extension/payment/skye/refer&order='.$this->session->data['order_id'].'&transaction=[TRANSACTIONID]', '', true ),
                 'SuccessPurch' => '',
                 'SuccessAmt' => '',
                 'DateLastPurch' => '',
@@ -206,10 +206,10 @@ class ModelExtensionPaymentSkye extends Model {
                     <MobilePhoneNumber>'.preg_replace('/\D+/', '', $order_info['telephone']).'</MobilePhoneNumber>
                     <EmailAddress>'.$order_info['email'].'</EmailAddress>
                     <Status/>
-                    <ReturnApprovedUrl>'.$this->url->link( 'extension/payment/skye/complete', 'transaction=[TRANSACTIONID]', true ).'</ReturnApprovedUrl>
-                    <ReturnDeclineUrl>'.$this->url->link( 'extension/payment/skye/decline', 'transaction=[TRANSACTIONID]', true ).'</ReturnDeclineUrl>
-                    <ReturnWithdrawUrl>'.$this->url->link( 'extension/payment/skye/cancel', 'transaction=[TRANSACTIONID]', true ).'</ReturnWithdrawUrl>
-                    <ReturnReferUrl>'.$this->url->link( 'extension/payment/skye/refer', 'transaction=[TRANSACTIONID]', true ).'</ReturnReferUrl>
+                    <ReturnApprovedUrl>'.$this->url->link( 'extension/payment/skye/complete', 'order='.$this->session->data['order_id'].'&transaction=[TRANSACTIONID]', true ).'</ReturnApprovedUrl>
+                    <ReturnDeclineUrl>'.$this->url->link( 'extension/payment/skye/decline', 'order='.$this->session->data['order_id'].'&transaction=[TRANSACTIONID]', true ).'</ReturnDeclineUrl>
+                    <ReturnWithdrawUrl>'.$this->url->link( 'extension/payment/skye/cancel', 'order='.$this->session->data['order_id'].'&transaction=[TRANSACTIONID]', true ).'</ReturnWithdrawUrl>
+                    <ReturnReferUrl>'.$this->url->link( 'extension/payment/skye/refer', 'order='.$this->session->data['order_id'].'&transaction=[TRANSACTIONID]', true ).'</ReturnReferUrl>
                     <CustomerID/>
                     <SuccessPurch/>
                     <SuccessAmt/>
