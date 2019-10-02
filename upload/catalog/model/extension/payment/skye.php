@@ -62,6 +62,9 @@ class ModelExtensionPaymentSkye extends Model {
         $format_billing_address = $order_info['payment_address_1'] . ' ' . $order_info['payment_address_2'];
         $format_billing_address_group = $this->formatAddress($format_billing_address, $order_info['payment_city'], $order_info['payment_postcode'],  $order_info['payment_zone_code']);
 
+        $mobile_number = preg_replace('/\D+/', '', $order_info['telephone']);
+        $mobile_number = preg_replace('/^61/', '0', $mobile_number);
+
         if (class_exists('SoapClient'))
         {
             $transaction_information = Array(
@@ -88,7 +91,7 @@ class ModelExtensionPaymentSkye extends Model {
                 'WorkPhoneNumber' => '',
                 'HomePhoneArea' => '',
                 'HomePhoneNumber' => '',
-                'MobilePhoneNumber' => preg_replace('/\D+/', '', $order_info['telephone']),
+                'MobilePhoneNumber' => $mobile_number,
                 'EmailAddress' => $order_info['email'],
                 'Status' => '',
                 'ReturnApprovedUrl' => $this->url->link( 'extension/payment/skye/complete&order='.$this->session->data['order_id'].'&transaction=[TRANSACTIONID]', '', true ),
@@ -203,7 +206,7 @@ class ModelExtensionPaymentSkye extends Model {
                     <WorkPhoneNumber/>
                     <HomePhoneArea/>
                     <HomePhoneNumber/>
-                    <MobilePhoneNumber>'.preg_replace('/\D+/', '', $order_info['telephone']).'</MobilePhoneNumber>
+                    <MobilePhoneNumber>'.$mobile_number.'</MobilePhoneNumber>
                     <EmailAddress>'.$order_info['email'].'</EmailAddress>
                     <Status/>
                     <ReturnApprovedUrl>'.$this->url->link( 'extension/payment/skye/complete', 'order='.$this->session->data['order_id'].'&transaction=[TRANSACTIONID]', true ).'</ReturnApprovedUrl>
