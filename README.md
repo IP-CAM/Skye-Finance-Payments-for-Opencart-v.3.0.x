@@ -24,7 +24,7 @@ To integrate **Skye** you will need your:
 
 ![11.png](https://raw.githubusercontent.com/skyecard/skyedocs/develop/docs/img/ecommerce/opencart/11.png)
 
-3 - Click **Upload** then select the **humm** extension (ending with `.ocmod.zip`).
+3 - Click **Upload** then select the **Skye** extension (ending with `.ocmod.zip`).
 
 ![12.png](https://raw.githubusercontent.com/skyecard/skyedocs/develop/docs/img/ecommerce/opencart/12.png)
 
@@ -34,7 +34,7 @@ _Next: Continue onto Finalising Installation [below](#finalising-installation)._
 
 1 - Download the latest extension for your OpenCart version [here](https://github.com/shophumm/humm-opencart/releases).
 
-2 - Unzip then copy contents of `uploads` folder into OpenCarts root folder. If upgrading **humm**, only **humm** files should be overwritten.
+2 - Unzip then copy contents of `uploads` folder into OpenCarts root folder. If upgrading **Skye**, only **Skye** files should be overwritten.
 
 _Next: Continue onto Finalising Installation [below](#finalising-installation)._
 
